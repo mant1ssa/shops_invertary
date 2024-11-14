@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  products:
+    build:
+      context: ./products
+    container_name: products
+    networks:
+      - app-network
+    restart: always
+
+  products_db:
+    image: postgres:16-alpine
+    container_name: products_db
+    environment:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+    volumes:
+      - ./products/dump.sql:/docker-entrypoint-initdb.d/dump.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - app-network
+    restart: always
+
+  api-gateway:
+    image: nginx:latest
+    container_name: api-gateway
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
+    depends_on:
+      - products
+    networks:
+      - app-network
+    restart: always
+
+networks:
+  app-network:
+    driver: bridge
