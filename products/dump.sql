@@ -80,6 +80,44 @@ CREATE TABLE shop_stock (
     FOREIGN KEY (product_id) REFERENCES product (id)
 );
 
+INSERT INTO "user" (username, password, is_active) VALUES
+    ('user1', 'password1', 1),
+    ('user2', 'password2', 1);
+
+INSERT INTO shop (name, address, is_active) VALUES
+    ('Shop 1', 'Sverdlovsk', 1),
+    ('Shop 2', 'Ufa', 1),
+    ('Shop 3', 'Moscow', 1),
+    ('Shop 4', 'Penza', 1);
+
+INSERT INTO product (PLU, name, shop_id, is_active) VALUES
+    ('32131123112', 'Product 1', 1, 1),
+    ('82734718918', 'Product 2', 2, 1),
+    ('72162736218', 'Product 3', 2, 1),
+    ('12345678909', 'Product 4', 2, 1),
+    ('99123132138', 'Product 5', 3, 1),
+    ('18312311112', 'Product 6', 3, 1),
+    ('31412412311', 'Product 7', 4, 1);
+
+INSERT INTO "order" (user_id, product_id, date, status, is_active) VALUES
+    (1, 1, '2024-11-01', 'issued', 1),
+    (2, 2, '2024-11-02', 'delivering', 1),
+    (2, 4, '2024-10-02', 'delivering', 1);
+
+INSERT INTO order_detail (order_id, quantity, is_active) VALUES
+    (1, 2, 1),
+    (2, 10, 1),
+    (3, 4, 1);
+
+
+INSERT INTO shop_stock (shop_id, product_id, quantity, is_active) VALUES
+    (1, 1, 625, 1),
+    (2, 3, 300, 1),
+    (4, 5, 3010, 1),
+    (4, 1, 777, 1),
+    (3, 7, 1000, 1);
+
+ALTER TABLE public."order" ALTER COLUMN "date" SET DEFAULT now();
 
 CREATE INDEX idx_product_plu ON product (plu);
 CREATE INDEX idx_order_user_id ON "order" (user_id);

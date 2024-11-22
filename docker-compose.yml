@@ -7,17 +7,20 @@ services:
     container_name: products
     networks:
       - app-network
+    depends_on:
+      - products_db
+      - rabbitmq
     restart: always
 
   products_db:
     image: postgres:16-alpine
     container_name: products_db
     environment:
-      POSTGRES_HOST: localhost
+      POSTGRES_HOST: products_db
       POSTGRES_PORT: 5432
-      POSTGRES_USER: test
-      POSTGRES_PASSWORD: test
-      POSTGRES_DB: test
+      POSTGRES_USER: mantissa
+      POSTGRES_PASSWORD: mantissa
+      POSTGRES_DB: mantissa
     volumes:
       - ./products/dump.sql:/docker-entrypoint-initdb.d/dump.sql
     ports:
@@ -25,6 +28,48 @@ services:
     networks:
       - app-network
     restart: always
+
+  history:
+    build:
+      context: ./history_service
+    container_name: history
+    networks:
+      - app-network
+    depends_on:
+      - history_db
+      - rabbitmq
+    restart: always
+
+  history_db:
+    image: postgres:16-alpine
+    container_name: history_db
+    environment:
+      POSTGRES_HOST: history_db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: history
+      POSTGRES_PASSWORD: history
+      POSTGRES_DB: history
+    volumes:
+      - ./history_service/history_dump.sql:/docker-entrypoint-initdb.d/dump.sql
+    ports:
+      - "5434:5432"
+    networks:
+      - app-network
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Management console
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 15s
+      retries: 5
+    networks:
+      - app-network
 
   api-gateway:
     image: nginx:latest
@@ -34,6 +79,7 @@ services:
     ports:
       - "80:80"
     depends_on:
+      - history
       - products
     networks:
       - app-network

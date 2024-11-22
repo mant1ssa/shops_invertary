@@ -1,25 +1,85 @@
-import { IsInt, IsString } from "class-validator";
+import { ApiResponse } from "../../response";
 
-export class productsGetResponse {
+export interface IProductInShop {
+    productInStockId: number;
+    shopId: number;
+    shopName: string;
+    productId: number;
+    productArticule: string;
+    productName: string;
+    quantityInStock: number;
+    quantityInOrders: number;
+}
 
-    @IsInt()
-    id!: number;
+export interface IProduct {
 
-    @IsString()
-    PLU!: string;
-
-    @IsString()
-    name!: string;
-
-    @IsInt()
-    productsInStockQuantity!: number;
-
-    @IsInt()
-    productsInOrderQuantity!: number;
+    productId: number;
+    PLU: string;
+    productName: string;
+    shopId: number
 
 }
 
+export interface INewProduct {
+
+    productId: number;
+    productPLU: string;
+    productName: string;
+
+}
+
+interface IProductInStock {
+
+    productInStockId: number;
+    productId: number;
+    productName: string;
+    quantity: number
+
+}
+
+export interface IShopStock {
+    shopId: number;
+    shopName: string;
+    stock: IProductInStock[]
+}
+
+export interface INewProduct {
+    id: number;
+    plu: string;
+    name: string
+}
+
+export interface InewOrder {
+    orderId: number;
+}
+
+export class ProductsListResponse extends ApiResponse<IProduct[]> {
+    constructor(products: IProduct[]) {
+        super(200, 'Успешно получена информация о всех товарах', products)
+    }
+}
+
+export class ProductsInStockListResponse extends ApiResponse<IShopStock[]> {
+    constructor(products: IShopStock[]) {
+        super(200, 'Успешно получена информация об остатках', products)
+    }
+}
+
+export class ProductCreateResponse extends ApiResponse<INewProduct[]> {
+    constructor(products: INewProduct[]) {
+        super(200, 'Успешно создан новый продукт', products)
+    }
+}
+
+export class OrderCreateResponse extends ApiResponse<InewOrder> {
+    constructor(products: InewOrder) {
+        super(200, 'Успешно создан новый заказ', products)
+    }
+}
 
 
-//  P.S. Возможно здесь стоит дополнительно обернуть поля декораторами вроде Min/Max (для полей, отвечающих за коливо чего-то), Length (у артикулов товаров представим, что длина всегда равна 11).
-//  Однако, в данном проекте эту часть оставим на валидации в DTO, считая, что сквозь них неправильные данные не пройдут.
+export class ProductsModuleError extends ApiResponse {
+    constructor(statusCode: number, message: string, payload: any) {
+        super(statusCode, message, payload)
+    }
+}
