@@ -9,7 +9,8 @@ SET standard_conforming_strings = on;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
 
-
+-- CREATE USER mantissa WITH PASSWORD 'mantissa';
+-- CREATE DATABASE mantissa OWNER mantissa;
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 

@@ -9,7 +9,8 @@ SET standard_conforming_strings = on;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
 
-
+-- CREATE USER history WITH PASSWORD 'history';
+-- CREATE DATABASE history OWNER history;
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 

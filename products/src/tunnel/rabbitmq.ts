@@ -16,9 +16,19 @@ export default class RabbitMQ {
                 console.error("RabbitMQ канал не инициализирован.");
                 throw new ApiResponse(500, "RabbitMQ не инициализирован", { error: event });
             }
-        } catch(e) {
-            console.log(e)
-            throw new ApiResponse(500, "Ошибка на этапе запуска RabbitMQ", { error: e });
+    
+            const sent = this.channel.sendToQueue("product_events", Buffer.from(JSON.stringify(event)), {
+                persistent: true,
+            });
+    
+            if (!sent) {
+                console.error("Сообщение не было отправлено.");
+            } else {
+                console.log("Сообщение успешно отправлено:", event);
+            }
+        } catch (e) {
+            console.error("Ошибка при отправке сообщения в RabbitMQ:", e);
+            throw new ApiResponse(500, "Ошибка на этапе отправки сообщения в RabbitMQ", { error: e });
         }
     }
 }

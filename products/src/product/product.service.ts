@@ -206,10 +206,10 @@ export class ProductService {
           }
 
           try {
-               console.log("Отправка события в RabbitMQ");
+               console.log("Отправка события в RabbitMQ: ");
                await RabbitMQ.publish({
                    action: "CREATE_PRODUCT",
-                   timestamp: new Date(),
+                   timestamp: new Date().toISOString().split('T')[0],
                    data: {
                        ...result[0],
                        shopId: queryDto.shopId
@@ -217,6 +217,7 @@ export class ProductService {
                });
            } catch (e) {
                console.error("Ошибка при отправке сообщения в RabbitMQ:", e);
+               throw new ProductsModuleError(500, 'Ошибка на этапе отправления события в RabbitMQ', e)
            }
 
           return new ProductCreateResponse(result[0]);
@@ -239,7 +240,6 @@ export class ProductService {
               });
           }
       
-          let result;
           const t = await sequelize.transaction();
       
           try {
@@ -271,7 +271,7 @@ export class ProductService {
                   `INSERT INTO shop_stock (shop_id, product_id, quantity) VALUES (:shopId, :productId, :quantity)`;
       
                   try {
-                      [result] = await sequelize.query(sqlQuery, {
+                      await sequelize.query(sqlQuery, {
                           replacements: {
                               shopId: queryDto.shopId,
                               productId: queryDto.productId,
@@ -293,7 +293,33 @@ export class ProductService {
               throw new ProductsModuleError(500, 'Неизвестная ошибка сервера', e)
           }
       
-          return new ApiResponse(201, 'Продукт успешно добавлен на полки', result);
+          try {
+               let [productData]: { plu: string, name: string }[] = await sequelize.query(
+                    `SELECT plu, name FROM product WHERE id = :productId`,
+                    {
+                        replacements: {
+                            productId: queryDto.productId,
+                        },
+                        type: QueryTypes.SELECT,
+                    }
+                );
+
+               console.log("Отправка события в RabbitMQ: ");
+               await RabbitMQ.publish({
+                    action: "fill_stock",
+                    timestamp: new Date().toISOString().split('T')[0],
+                    data: {
+                         productPLU: productData.plu,
+                         productName: productData.name,
+                         ...queryDto
+                   },
+               });
+           } catch (e) {
+               console.error("Ошибка при отправке сообщения в RabbitMQ:", e);
+               throw new ProductsModuleError(500, 'Ошибка на этапе отправления события в RabbitMQ', e)
+           }
+
+          return new ApiResponse(201, 'Продукт успешно добавлен на полки', { ...queryDto });
       }
       
 
@@ -333,8 +359,12 @@ export class ProductService {
                     type: QueryTypes.SELECT
                })
 
-               if(productsCntInStock[0]?.quantity < queryDto.quantity) {
-                    throw new ProductsModuleError(400, 'К сожалению не получится оформить заказ, т.к. на полке меньше товара, чем вы хотите оформить', {})
+               if(productsCntInStock[0]) {
+                    if(productsCntInStock[0].quantity < queryDto.quantity) {
+                         throw new ProductsModuleError(400, 'К сожалению не получится оформить заказ, т.к. на полке меньше товара, чем вы хотите оформить', {})
+                    }
+               } else {
+                    throw new ProductsModuleError(500, 'Невозможно создать заказ, т.к. у магазина на данный момент нет данного товара на полках', {});
                }
 
                const [[newOrder]]: any[] = await sequelize.query(`
@@ -386,6 +416,33 @@ export class ProductService {
                     throw e;
                }
                throw new ProductsModuleError(500, 'Не удалось создать новый заказ', {e});
+          }
+
+          try {
+               let [productData]: { plu: string, name: string, shop_id: number }[] = await sequelize.query(
+                    `SELECT plu, name, shop_id FROM product WHERE id = :productId`,
+                    {
+                        replacements: {
+                            productId: queryDto.productId,
+                        },
+                        type: QueryTypes.SELECT,
+                    }
+                );
+
+               console.log("Отправка события в RabbitMQ: ");
+               await RabbitMQ.publish({
+                    action: "create_order",
+                    timestamp: new Date().toISOString().split('T')[0],
+                    data: {
+                         productPLU: productData.plu,
+                         productName: productData.name,
+                         productId: queryDto.productId,
+                         shopId: productData.shop_id
+                   },
+               });
+          } catch (e) {
+               console.error("Ошибка при отправке сообщения в RabbitMQ:", e);
+               throw new ProductsModuleError(500, 'Ошибка на этапе отправления события в RabbitMQ', e)
           }
 
           return new OrderCreateResponse({orderId: newOrderId});

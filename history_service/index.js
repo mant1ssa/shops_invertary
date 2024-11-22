@@ -62,12 +62,12 @@ RabbitMQ.init()
 
       await createHistory({
         action: message.action.toLowerCase(),
-        // actionDate: message.timestamp,
-        // shopId: message.data.shopId,
-        // productId: message.data.productId,
-        // productName: message.data.productName,
-        // PLU: message.data.productPLU,
-        // quantity: null,
+        actionDate: message.timestamp,
+        shopId: message.data.shopId,
+        productId: message.data.productId,
+        productName: message.data.productName,
+        PLU: message.data.productPLU,
+        quantity: message.data.quantity || null,
       });
     });
   })

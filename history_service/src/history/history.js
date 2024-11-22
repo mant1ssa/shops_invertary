@@ -78,7 +78,6 @@ export async function getHistory(queryString) {
 export async function createHistory(body) {
 
     console.log(body)
-    return body;
 
     const { action, actionDate, shopId, productId, productName, PLU, quantity } = body;
 

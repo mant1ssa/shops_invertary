@@ -5,11 +5,19 @@ services:
     build:
       context: ./products
     container_name: products
+    environment:
+      POSTGRES_HOST: products_db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: mantissa
+      POSTGRES_PASSWORD: mantissa
+      POSTGRES_DB: mantissa
     networks:
       - app-network
     depends_on:
-      - products_db
-      - rabbitmq
+      rabbitmq:
+          condition: service_healthy
+      products_db:
+        condition: service_healthy
     restart: always
 
   products_db:
@@ -21,6 +29,12 @@ services:
       POSTGRES_USER: mantissa
       POSTGRES_PASSWORD: mantissa
       POSTGRES_DB: mantissa
+    healthcheck:
+      test: pg_isready -U $$POSTGRES_USER
+      interval: 15s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
     volumes:
       - ./products/dump.sql:/docker-entrypoint-initdb.d/dump.sql
     ports:
@@ -33,11 +47,19 @@ services:
     build:
       context: ./history_service
     container_name: history
+    environment:
+      POSTGRES_HOST: history_db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: history
+      POSTGRES_PASSWORD: history
+      POSTGRES_DB: history
     networks:
       - app-network
     depends_on:
-      - history_db
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      products_db:
+        condition: service_healthy
     restart: always
 
   history_db:
@@ -49,6 +71,12 @@ services:
       POSTGRES_USER: history
       POSTGRES_PASSWORD: history
       POSTGRES_DB: history
+    healthcheck:
+      test: pg_isready -U $$POSTGRES_USER
+      interval: 15s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
     volumes:
       - ./history_service/history_dump.sql:/docker-entrypoint-initdb.d/dump.sql
     ports:
